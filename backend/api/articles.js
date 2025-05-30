@@ -97,9 +97,18 @@ const getArticleByCategory = async(req, res) => {
     const categories = await app.db.raw(queries.categoryWithChildren , categoryId)
     const ids = categories.rows.map(c =>c.id)
 
-    app.db('articles').where({categoriesId : ids})
+    //Join entre articles et auteurs
+    app.db( {a:'articles' , u : 'users'})
+            .select('a.id' , 'a.name', 'a.description' ,'a.imageUrl' , { author : 'u.name'})
+            .limit(limit)
+            .offset( page * limit-limit)
+            .whereRaw('?? = ??', ['u.id', 'a.userId'])
+            .whereIn('categoriesId', ids)
+            .orderBy('a.id', 'desc')
+            .then(articles =>res.json(articles))
+            .catch(err =>res.status(500).send(err))
 
-}
+ }
 
 return { save , remove , get, getArticleById, getArticleByCategory}
 
